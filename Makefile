@@ -6,7 +6,7 @@ SRC		:= $(shell find $(SOURCEDIR) -name '*.cpp')
 INCLUDE	:= include
 LIB		:= lib
 
-LIBRARIES	:= -lXKCP -lntl -pthread -lgmp -lhelib
+LIBRARIES	:= -lXKCP -lntl -pthread -lgmp -lhelib -lcryptopp
 EXECUTABLE	:= main
 
 all: $(BIN)/$(EXECUTABLE)

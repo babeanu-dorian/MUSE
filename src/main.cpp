@@ -383,6 +383,9 @@ std::vector<helib::Ctxt> sponge(std::function<void(std::vector<helib::Ctxt> &)> 
     helib::Ctxt ctxt0 = heContext.encrypt(0);
     std::vector<helib::Ctxt> P(N || pad(r, N.size(), heContext));
     std::vector<helib::Ctxt> S(b, ctxt0);
+
+    std::string debugIn;
+
     for (size_t i = 0; i != P.size(); i += r) {
         size_t j = 0;
         for (; j != r; ++j) {
@@ -398,6 +401,7 @@ std::vector<helib::Ctxt> sponge(std::function<void(std::vector<helib::Ctxt> &)> 
     }
 
     std::cout << "Building Z in sponge..." << std::endl;
+    std::cin >> debugIn;
 
     std::vector<helib::Ctxt> Z(std::cbegin(S), std::next(std::cbegin(S), r));
     while (d > Z.size()) {
@@ -416,6 +420,7 @@ std::vector<helib::Ctxt> hekmac256(std::vector<helib::Ctxt> const &K, std::vecto
     static size_t const rate = 1600 - 512;
     static size_t const bytePadW = 136;
     static size_t const nRounds = 24;
+
     std::vector<helib::Ctxt> const two0(2, heContext.encrypt(0));
     std::vector<helib::Ctxt> const encodedKmac(encodeString("KMAC", heContext));
     std::function<void(std::vector<helib::Ctxt> &)> const f(std::bind(keccakP, std::placeholders::_1, b, nRounds, heContext));
@@ -442,16 +447,29 @@ void printData(char const *msg, std::vector<T> data) {
 void kmacTest(std::vector<uint8_t> const &key, std::vector<uint8_t> const &input, size_t outputLength) {
     std::vector<uint8_t> output(outputLength, 0);
     KMAC256(key.data(), key.size() * CHAR_BIT, input.data(), input.size() * CHAR_BIT, output.data(), output.size() * CHAR_BIT, 0, 0);
-    printData("Hash from kmac256: ", output);
+    printData("Hash from kmac256: ", std::vector<uint>(output.cbegin(), output.cend()));
 }
 
 void hemacTest(std::string const &key, std::string const &input, size_t outputLength) {
+    std::string debugIn;
+    
     HeContext heContext;
+
+    std::cout << "Encrypting input..." << std::endl;
+    std::cin >> debugIn;
+
     std::vector<helib::Ctxt> ctxtKey(encryptString(key, heContext));
     std::vector<helib::Ctxt> ctxtInput(encryptString(input, heContext));
+
+    std::vector<helib::Ctxt> bytepadOutput = bytepad(encodeString(ctxtInput, heContext), 136, heContext);
+    std::cout << "Bytepad output size: " << bytepadOutput.size() << std::endl;
+
+    std::cout << "Calling kmac..." << std::endl;
+    std::cin >> debugIn;
+
     std::vector<helib::Ctxt> ctxtHash(hekmac256(ctxtKey, ctxtInput, std::vector<helib::Ctxt>(), outputLength, heContext));
-    std::vector<uint8_t> ptxtHash = decryptString(ctxtHash, heContext);
-    printData("Hash from hekmac256: ", ptxtHash);
+    std::vector<uint8_t> ptxtHash(decryptString(ctxtHash, heContext));
+    printData("Hash from hekmac256: ", std::vector<uint>(ptxtHash.cbegin(), ptxtHash.cend()));
 }
 
 int main() {
@@ -473,6 +491,6 @@ int main() {
 
     std::vector<uint8_t> key{'k', 'e', 'y'};
     std::vector<uint8_t> input{'i', 'n', 'p', 'u', 't'};
-    kmacTest(key, input, 10);
+    //kmacTest(key, input, 10);
     hemacTest("key", "input", 10);
 }
